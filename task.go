@@ -3,9 +3,8 @@ package main
 import "github.com/morya/utils/log"
 
 type Task struct {
-	Name         string
-	Command      string
-	Env          map[string]string
-	IsReplaceEnv bool
-	Log          *log.Logger
+	Command      string            `json:"command"`
+	Env          map[string]string `json:"env"`
+	IsReplaceEnv bool              `json:"is_replace_env"`
+	Log          *log.Logger       `json:"-"`
 }

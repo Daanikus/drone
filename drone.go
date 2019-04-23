@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"github.com/labstack/gommon/log"
+	"github.com/morya/utils/log"
 	"sync"
 
 	"github.com/labstack/echo"
@@ -15,10 +15,10 @@ type Drone struct {
 	echo *echo.Echo
 }
 
-func newDrone() (*Drone, error) {
+func newDrone() *Drone {
 	d := &Drone{}
 	d.wg.Add(1)
-	return d, nil
+	return d
 }
 
 func (p *Drone) onHook(c echo.Context) error {
@@ -32,7 +32,10 @@ func (p *Drone) Run(listenAddr string) {
 	p.echo.GET("/webhook", p.onHook)
 	p.echo.POST("/webhook", p.onHook)
 
-	log.Fatal(p.echo.Start(listenAddr))
+	err := p.echo.Start(listenAddr)
+	if err != nil {
+		log.InfoError(err)
+	}
 }
 
 func (p *Drone) Stop() {

@@ -1,0 +1,39 @@
+{
+    "servers": {
+      "dev_server": {
+        "ip": "10.10.1.1",
+        "user": "test",
+        "pswd": "test123",
+        "ssh_private_key": "~/.ssh/id_rsa",
+        "ssh_port": 15
+      }
+    },
+    "projects": {
+      "prj1": {
+        "server": "dev_server",
+        "git_url": "git@github.com:morya/drone.git",
+        "pre_task": [
+          {
+            "command":"echo 'hello'",
+            "env": {
+              "PATH":"/usr/local/bin",
+              "GIT_PRJ":"sss"
+            }
+          }
+        ],
+        "task": [
+          {
+            "command":"./build.sh"
+          }
+        ],
+        "post_task": [
+          {
+            "command":"echo 'post step'",
+            "env": {
+              "POST_ENV":"ENV2"
+            }
+          }
+        ]
+      }
+    }
+}

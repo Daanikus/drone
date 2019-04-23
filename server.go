@@ -3,7 +3,7 @@ package main
 type Server struct {
 	IP            string
 	User          string
-	Pswd          string
-	SshPrivateKey string
-	SshPort       int
+	Pswd          string `json:"pswd"`
+	SshPrivateKey string `json:"ssh_private_key"`
+	SshPort       int    `json:"ssh_port"`
 }
