@@ -10,5 +10,5 @@ require (
 	github.com/morya/utils v1.5.0
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/valyala/fasttemplate v1.0.1 // indirect
-	golang.org/x/crypto v0.0.0-20190418165655-df01cb2cc480 // indirect
+	golang.org/x/crypto v0.0.0-20190418165655-df01cb2cc480
 )

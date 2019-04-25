@@ -38,20 +38,14 @@ func main() {
 
 	log.Infof("obj = %s", DumpObject(config))
 
-	if false {
+	drone := newDrone()
 
-		go func() {
+	go func() {
+		sig := make(chan os.Signal)
+		signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
+		<-sig
+		drone.Stop()
+	}()
 
-			drone := newDrone()
-
-			go func() {
-				sig := make(chan os.Signal)
-				signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
-				<-sig
-				drone.Stop()
-			}()
-
-			drone.Run(*flagListen)
-		}()
-	}
+	drone.Run(*flagListen)
 }

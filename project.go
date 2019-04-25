@@ -1,8 +1,9 @@
 package main
 
 type Project struct {
-	GitURL string `json:"git_url"`
-	Server string
+	Server    string
+	GitURL    string `json:"git_url"`
+	LocalPath string `json:"local_path"`
 
 	PreTasks   []Task `json:"pre_task"`
 	BuildTasks []Task `json:"task"`
