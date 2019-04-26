@@ -1,10 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"sync"
-	"bytes"
 	"time"
 
 	"github.com/labstack/echo"
@@ -17,8 +17,8 @@ type Drone struct {
 	wg   sync.WaitGroup
 	lock sync.Mutex
 
-	ctx context.Context
-	cancel context.CancelFunc
+	ctx      context.Context
+	cancel   context.CancelFunc
 	echo     *echo.Echo
 	renderer echo.Renderer
 
@@ -28,9 +28,9 @@ type Drone struct {
 func newDrone() *Drone {
 	ctx, cancel := context.WithCancel(context.Background())
 	d := &Drone{
-		ctx:ctx,
-		cancel:cancel,
-		chanEvent: make(chan*Event, 10),
+		ctx:       ctx,
+		cancel:    cancel,
+		chanEvent: make(chan *Event, 10),
 	}
 	d.wg.Add(1)
 	return d
@@ -52,7 +52,7 @@ func (p *Drone) onProjectStart(c echo.Context) error {
 	return c.String(http.StatusOK, "OK")
 }
 
-func (p *Drone) build(evt *Event){
+func (p *Drone) build(evt *Event) {
 	return
 }
 
@@ -61,26 +61,27 @@ func (p *Drone) builder(ctx context.Context, cancel context.CancelFunc) {
 
 	for {
 		select {
-			case<- ctx	.Done():
+		case <-ctx.Done():
 			return
 
-			case evt := <-p.chanEvent:
+		case evt := <-p.chanEvent:
 			p.build(evt)
 		}
 	}
 }
 
-
 func (p *Drone) checkRepo(prj *Project) {
 	repo := newRepo(prj.LocalPath)
-	if ! repo.HasUpdate() {
+	if !repo.HasUpdate() {
 		log.Debug("repo has no update")
 		return
 	}
 
+	repo.Pull()
+
 	serverCfg := config.Servers[prj.Server]
 	sshConn, err := newSshConn(serverCfg)
-	if err !=nil {
+	if err != nil {
 		log.InfoErrorf(err, "connect server failed")
 		return
 	}
@@ -102,8 +103,8 @@ func (d *Drone) warden(ctx context.Context, cancel context.CancelFunc) {
 			return
 
 		case <-ticker.C:
-			for _, prj := range config.Projects{
-				d.checkRepo(prj	)
+			for _, prj := range config.Projects {
+				d.checkRepo(prj)
 			}
 		}
 	}
