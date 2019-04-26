@@ -71,7 +71,11 @@ func (p *Drone) builder(ctx context.Context, cancel context.CancelFunc) {
 }
 
 func (p *Drone) checkRepo(prj *Project) {
-	repo := newRepo(prj.LocalPath)
+	repo, err := newRepo(prj.GitURL, prj.LocalPath, prj.GitKey)
+	if err != nil {
+		log.InfoError(err, "check repository failed")
+		return
+	}
 	if !repo.HasUpdate() {
 		log.Debug("repo has no update")
 		return
