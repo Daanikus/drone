@@ -3,15 +3,37 @@ package main
 import (
 	"net"
 
+	"github.com/morya/utils/log"
+
+	"github.com/morya/utils/errors"
+	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
+
 	"github.com/morya/drone/util"
 
 	crypto_ssh "golang.org/x/crypto/ssh"
-	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 )
 
 type Repo struct {
-	repo *git.Repository
+	repo       *git.Repository
+	lastCommit *object.Commit
+}
+
+func getRepoLastCommit(r *git.Repository) (*object.Commit, error) {
+	logs, _ := r.Log(&git.LogOptions{})
+	var lastCommit *object.Commit
+	logs.ForEach(func(commit *object.Commit) error {
+		if lastCommit == nil {
+			lastCommit = commit
+			log.Debugf("last commit hex = %v", lastCommit.Hash.String())
+			return errors.New("done")
+		}
+		log.Debugf("commit hash = %v", commit.Hash.String())
+		return nil
+	})
+
+	return lastCommit, nil
 }
 
 func newRepo(repoURL string, repoPath string, keyFile string) (*Repo, error) {
@@ -47,13 +69,28 @@ func newRepo(repoURL string, repoPath string, keyFile string) (*Repo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Repo{repo: repo}, nil
+	lastCommit, err := getRepoLastCommit(repo)
+	log.Debugf("last commit is %v, err = %v", lastCommit.Hash.String(), err)
+	return &Repo{repo: repo, lastCommit: lastCommit}, nil
 }
 
-func (r *Repo) HasUpdate() bool {
-	return true
-}
+func (r *Repo) HasUpdate() (bool, error) {
+	r.repo.Fetch(&git.FetchOptions{RemoteName: "origin"})
 
-func (r *Repo) Pull() bool {
-	return false
+	tree, err := r.repo.Worktree()
+	if err != nil {
+		return false, err
+	}
+
+	err = tree.Pull(&git.PullOptions{RemoteName: "origin"})
+	switch err {
+	case git.NoErrAlreadyUpToDate:
+		return false, nil
+
+	case nil:
+		return true, nil
+	default:
+
+	}
+	return false, err
 }

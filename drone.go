@@ -76,12 +76,15 @@ func (p *Drone) checkRepo(prj *Project) {
 		log.InfoError(err, "check repository failed")
 		return
 	}
-	if !repo.HasUpdate() {
-		log.Debug("repo has no update")
+
+	hasUpdate, err := repo.HasUpdate()
+	if err != nil {
+		log.InfoError(err, "pull new changes failed")
 		return
 	}
-
-	repo.Pull()
+	if !hasUpdate {
+		return
+	}
 
 	serverCfg := config.Servers[prj.Server]
 	sshConn, err := newSshConn(serverCfg)
