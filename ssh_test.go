@@ -7,11 +7,11 @@ import (
 
 func TestSshExec(t *testing.T) {
 	cfg := &Server{
-		IP:      "192.168.2.156",
+		IP:      "39.104.53.120",
 		User:    "morya",
 		SshPort: 22,
 
-		SshPrivateKey: "/Users/morya/.ssh/id_rsa",
+		SshPrivateKey: "id_rsa",
 	}
 	s, err := newSshConn(cfg)
 	if err != nil {
@@ -20,5 +20,5 @@ func TestSshExec(t *testing.T) {
 	}
 
 	out := os.Stdout
-	s.Exec(out, "date", nil)
+	s.Exec(out, "date; pwd; ls -alh", nil)
 }
