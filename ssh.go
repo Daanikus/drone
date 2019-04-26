@@ -54,7 +54,21 @@ func newSshConn(serverCfg *Server) (*SshConn, error) {
 }
 
 func (p *SshConn) Exec(output io.Writer, cmd string, env map[string]string) {
-	s := fmt.Sprintf("command output from %v, == .....", cmd)
-	io.WriteString(output, s)
+	session, err := p.conn.NewSession()
+	if err != nil {
+		log.InfoError(err)
+		return
+	}
+	if env != nil {
+		for k, v := range env {
+			session.Setenv(k, v)
+		}
+	}
+	data, err := session.CombinedOutput(cmd)
+	if err != nil {
+		log.InfoError(err)
+		return
+	}
+	output.Write(data)
 	return
 }

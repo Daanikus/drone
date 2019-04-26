@@ -18,7 +18,6 @@ var config = &Config{}
 
 func isFileReadable(filename string) bool {
 	if stat, err := os.Stat(filename); err != nil {
-		return false
 		if stat.IsDir() {
 			return false
 		}
