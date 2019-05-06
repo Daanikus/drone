@@ -1,6 +1,6 @@
 package main
 
-type Server struct {
+type ServerConfig struct {
 	IP            string
 	User          string
 	Pswd          string `json:"pswd"`

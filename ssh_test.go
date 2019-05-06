@@ -3,22 +3,29 @@ package main
 import (
 	"os"
 	"testing"
+
+	"github.com/morya/utils/log"
 )
 
 func TestSshExec(t *testing.T) {
-	cfg := &Server{
-		IP:      "39.104.53.120",
-		User:    "morya",
-		SshPort: 22,
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetLevelString("debug")
 
-		SshPrivateKey: "id_rsa",
-	}
-	s, err := newSshConn(cfg)
-	if err != nil {
-		t.Error(err)
-		return
+	var sample = "drone.json"
+	if err := loadConfig(sample); err !=nil {
+		t.Errorf("load config failed")
 	}
 
-	out := os.Stdout
-	s.Exec(out, "date; pwd; ls -alh", nil)
+	for name, serverCfg := range config.Servers {
+		log.Info("before create conn")
+		s, err := newSshConn(serverCfg)
+		if err != nil {
+			t.Error(err, "create ssh connection failed")
+			return
+		}
+
+		// call cmd on server
+		log.Infof("execute cmd on server [%v:%v]", name, serverCfg.IP)
+		s.Exec(os.Stderr, "date; pwd; ls -alh", nil)
+	}
 }

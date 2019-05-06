@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/morya/utils/log"
 	"golang.org/x/crypto/ssh"
@@ -29,12 +30,14 @@ func loadKey(keyPath string) ssh.AuthMethod {
 	return ssh.PublicKeys(s)
 }
 
-func newSshConn(serverCfg *Server) (*SshConn, error) {
+func newSshConn(serverCfg *ServerConfig) (*SshConn, error) {
 	AuthMethods := make([]ssh.AuthMethod, 0)
 	if serverCfg.Pswd != "" {
+		log.Debugf("will try password auth")
 		AuthMethods = append(AuthMethods, ssh.Password(serverCfg.Pswd))
 	}
 	if serverCfg.SshPrivateKey != "" {
+		log.Debugf("will try PrivateKey auth %v", serverCfg.SshPrivateKey)
 		if keyAuth := loadKey(serverCfg.SshPrivateKey); keyAuth != nil {
 			AuthMethods = append(AuthMethods, keyAuth)
 		}
@@ -44,9 +47,12 @@ func newSshConn(serverCfg *Server) (*SshConn, error) {
 		User:            serverCfg.User,
 		Auth:            AuthMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         time.Second * 10,
 	}
 
-	conn, err := ssh.Dial("tcp", fmt.Sprintf("%v:%v", serverCfg.IP, serverCfg.SshPort), sshCfg)
+	var remoteAddr = fmt.Sprintf("%v:%v", serverCfg.IP, serverCfg.SshPort)
+	log.Debugf("dial remote %v", remoteAddr)
+	conn, err := ssh.Dial("tcp", remoteAddr, sshCfg)
 	if err != nil {
 		return nil, err
 	}

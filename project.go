@@ -1,6 +1,6 @@
 package main
 
-type Project struct {
+type ProjectConfig struct {
 	Server    string
 	GitURL    string `json:"git_url"`
 	GitKey    string `json:"git_key"`

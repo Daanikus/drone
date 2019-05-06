@@ -70,7 +70,7 @@ func (p *Drone) builder(ctx context.Context, cancel context.CancelFunc) {
 	}
 }
 
-func (p *Drone) checkRepo(prj *Project) {
+func (p *Drone) checkRepo(name string, prj *ProjectConfig) {
 	repo, err := newRepo(prj.GitURL, prj.LocalPath, prj.GitKey)
 	if err != nil {
 		log.InfoError(err, "check repository failed")
@@ -79,17 +79,18 @@ func (p *Drone) checkRepo(prj *Project) {
 
 	hasUpdate, err := repo.HasUpdate()
 	if err != nil {
-		log.InfoError(err, "pull new changes failed")
+		log.InfoError(err, "project [%v] pull new changes failed", name)
 		return
 	}
 	if !hasUpdate {
+		log.Infof("project [%v] checked, no update.", name)
 		return
 	}
 
 	serverCfg := config.Servers[prj.Server]
 	sshConn, err := newSshConn(serverCfg)
 	if err != nil {
-		log.InfoErrorf(err, "connect server failed")
+		log.InfoErrorf(err, "[%v] connect server [%v] failed", name, serverCfg.IP)
 		return
 	}
 
@@ -103,15 +104,15 @@ func (p *Drone) checkRepo(prj *Project) {
 func (d *Drone) warden(ctx context.Context, cancel context.CancelFunc) {
 	defer cancel()
 
-	ticker := time.NewTicker(time.Second * 60)
+	ticker := time.NewTicker(time.Second * 5)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 
 		case <-ticker.C:
-			for _, prj := range config.Projects {
-				d.checkRepo(prj)
+			for prjName, prjCfg := range config.Projects {
+				go d.checkRepo(prjName, prjCfg)
 			}
 		}
 	}
@@ -121,6 +122,9 @@ func (p *Drone) Run(listenAddr string) {
 	defer p.wg.Done()
 
 	p.echo = echo.New()
+	p.echo.HideBanner = true
+
+	p.echo.Logger = &EchoLogger{}
 
 	p.echo.GET("/webhook", p.onHook)
 	p.echo.POST("/webhook", p.onHook)

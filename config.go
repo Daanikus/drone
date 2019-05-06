@@ -10,8 +10,8 @@ import (
 )
 
 type Config struct {
-	Servers  map[string]*Server  `json:"servers"`
-	Projects map[string]*Project `json:"projects"`
+	Servers  map[string]*ServerConfig  `json:"servers"`
+	Projects map[string]*ProjectConfig `json:"projects"`
 }
 
 var config = &Config{}

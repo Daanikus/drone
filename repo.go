@@ -3,15 +3,12 @@ package main
 import (
 	"net"
 
-	"github.com/morya/utils/log"
-
-	"github.com/morya/utils/errors"
-	git "gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
-
 	"github.com/morya/drone/util"
-
+	"github.com/morya/utils/log"
+	"github.com/pkg/errors"
 	crypto_ssh "golang.org/x/crypto/ssh"
+	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 )
 
@@ -53,7 +50,7 @@ func newRepo(repoURL string, repoPath string, keyFile string) (*Repo, error) {
 		// TODO 'git' 是git-server默认用户名，暂时不考虑支持其它用户名
 		auth, err := ssh.NewPublicKeysFromFile("git", keyFile, "")
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "read git key failed, key=%v", keyFile)
 		}
 		auth.HostKeyCallback = func(hostname string, remote net.Addr, key crypto_ssh.PublicKey) error {
 			// ignore host key
@@ -67,7 +64,7 @@ func newRepo(repoURL string, repoPath string, keyFile string) (*Repo, error) {
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "open git repo failed, path=%v", repoPath)
 	}
 	lastCommit, err := getRepoLastCommit(repo)
 	log.Debugf("last commit is %v, err = %v", lastCommit.Hash.String(), err)

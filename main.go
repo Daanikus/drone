@@ -27,7 +27,7 @@ func main() {
 		return
 	}
 
-	log.Infof("obj = %s", util.DumpObject(config))
+	log.Debugf("config = %s", util.DumpObject(config))
 
 	drone := newDrone()
 

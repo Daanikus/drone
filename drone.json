@@ -1,11 +1,11 @@
 {
     "servers": {
       "dev_server": {
-        "ip": "10.10.1.1",
-        "user": "test",
-        "pswd": "test123",
+        "ip": "39.104.53.120",
+        "user": "morya",
+        "pswd": "",
         "ssh_private_key": "~/.ssh/id_rsa",
-        "ssh_port": 15
+        "ssh_port": 22
       }
     },
     "projects": {
