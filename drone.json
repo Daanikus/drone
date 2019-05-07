@@ -12,6 +12,8 @@
       "prj1": {
         "server": "dev_server",
         "git_url": "git@github.com:morya/drone.git",
+        "git_key": "id_rsa",
+        "local_path": "drone",
         "pre_task": [
           {
             "command":"echo 'hello'",

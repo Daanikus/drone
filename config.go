@@ -17,10 +17,13 @@ type Config struct {
 var config = &Config{}
 
 func isFileReadable(filename string) bool {
-	if stat, err := os.Stat(filename); err != nil {
-		if stat.IsDir() {
-			return false
-		}
+	stat, err := os.Stat(filename)
+	if err != nil {
+		return false
+	}
+
+	if stat.IsDir() {
+		return false
 	}
 	return true
 }
@@ -38,6 +41,15 @@ func isValidConfig() (err error) {
 		if _, ok := config.Servers[server]; !ok {
 			err = fmt.Errorf("server [%v] in project [%v] not valid", server, prjName)
 			return
+		}
+
+		if p.LocalPath == "" {
+			err = fmt.Errorf("prj [%v] 'local_path' is empty", prjName)
+			return
+		}
+
+		if p.GitKey == "" {
+			return fmt.Errorf("prj [%v] 'git_key' is empty", prjName)
 		}
 	}
 	for name, server := range config.Servers {

@@ -3,6 +3,8 @@ package main
 import (
 	"net"
 
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
+
 	"github.com/morya/drone/util"
 	"github.com/morya/utils/log"
 	"github.com/pkg/errors"
@@ -13,6 +15,7 @@ import (
 )
 
 type Repo struct {
+	keyFile    string
 	repo       *git.Repository
 	lastCommit *object.Commit
 }
@@ -23,14 +26,28 @@ func getRepoLastCommit(r *git.Repository) (*object.Commit, error) {
 	logs.ForEach(func(commit *object.Commit) error {
 		if lastCommit == nil {
 			lastCommit = commit
-			log.Debugf("last commit hex = %v", lastCommit.Hash.String())
 			return errors.New("done")
 		}
-		log.Debugf("commit hash = %v", commit.Hash.String())
+		// log.Debugf("commit hash = %v", commit.Hash.String())
 		return nil
 	})
 
 	return lastCommit, nil
+}
+
+func getAuth(keyFile string) (transport.AuthMethod, error) {
+	// TODO 'git' 是git-server默认用户名
+	//   暂不支持其它用户名
+	auth, err := ssh.NewPublicKeysFromFile("git", keyFile, "")
+	if err != nil {
+		return nil, errors.Wrapf(err, "read git key failed, key=%v", keyFile)
+	}
+	auth.HostKeyCallback = func(hostname string, remote net.Addr, key crypto_ssh.PublicKey) error {
+		// ignore host key
+		return nil
+	}
+
+	return auth, nil
 }
 
 func newRepo(repoURL string, repoPath string, keyFile string) (*Repo, error) {
@@ -47,14 +64,10 @@ func newRepo(repoURL string, repoPath string, keyFile string) (*Repo, error) {
 	if exist {
 		repo, err = git.PlainOpen(repoPath)
 	} else {
-		// TODO 'git' 是git-server默认用户名，暂时不考虑支持其它用户名
-		auth, err := ssh.NewPublicKeysFromFile("git", keyFile, "")
+
+		auth, err := getAuth(keyFile)
 		if err != nil {
-			return nil, errors.Wrapf(err, "read git key failed, key=%v", keyFile)
-		}
-		auth.HostKeyCallback = func(hostname string, remote net.Addr, key crypto_ssh.PublicKey) error {
-			// ignore host key
-			return nil
+			return nil, errors.Wrap(err, "create auth failed")
 		}
 
 		repo, err = git.PlainClone(repoPath, false, &git.CloneOptions{
@@ -66,20 +79,28 @@ func newRepo(repoURL string, repoPath string, keyFile string) (*Repo, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "open git repo failed, path=%v", repoPath)
 	}
+	if repo == nil {
+		return nil, errors.New("repo is nil")
+	}
 	lastCommit, err := getRepoLastCommit(repo)
 	log.Debugf("last commit is %v, err = %v", lastCommit.Hash.String(), err)
-	return &Repo{repo: repo, lastCommit: lastCommit}, nil
+	return &Repo{keyFile: keyFile, repo: repo, lastCommit: lastCommit}, nil
 }
 
 func (r *Repo) HasUpdate() (bool, error) {
-	r.repo.Fetch(&git.FetchOptions{RemoteName: "origin"})
+	auth, err := getAuth(r.keyFile)
+	if err != nil {
+		return false, err
+	}
+
+	// r.repo.Fetch(&git.FetchOptions{RemoteName: "origin", Auth: auth})
 
 	tree, err := r.repo.Worktree()
 	if err != nil {
 		return false, err
 	}
 
-	err = tree.Pull(&git.PullOptions{RemoteName: "origin"})
+	err = tree.Pull(&git.PullOptions{RemoteName: "origin", Auth: auth})
 	switch err {
 	case git.NoErrAlreadyUpToDate:
 		return false, nil

@@ -7,7 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mattn/go-colorable"
+
 	"github.com/labstack/echo"
+	glog "github.com/labstack/gommon/log"
 	"github.com/morya/utils/log"
 )
 
@@ -79,7 +82,7 @@ func (p *Drone) checkRepo(name string, prj *ProjectConfig) {
 
 	hasUpdate, err := repo.HasUpdate()
 	if err != nil {
-		log.InfoError(err, "project [%v] pull new changes failed", name)
+		log.InfoErrorf(err, "project [%v] pull new changes failed", name)
 		return
 	}
 	if !hasUpdate {
@@ -112,7 +115,7 @@ func (d *Drone) warden(ctx context.Context, cancel context.CancelFunc) {
 
 		case <-ticker.C:
 			for prjName, prjCfg := range config.Projects {
-				go d.checkRepo(prjName, prjCfg)
+				d.checkRepo(prjName, prjCfg)
 			}
 		}
 	}
@@ -124,7 +127,8 @@ func (p *Drone) Run(listenAddr string) {
 	p.echo = echo.New()
 	p.echo.HideBanner = true
 
-	p.echo.Logger = &EchoLogger{}
+	p.echo.Logger = glog.New("echo")
+	p.echo.Logger.SetOutput(colorable.NewColorableStderr())
 
 	p.echo.GET("/webhook", p.onHook)
 	p.echo.POST("/webhook", p.onHook)
