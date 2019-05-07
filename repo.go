@@ -94,3 +94,12 @@ func (r *Repo) HasUpdate() (bool, error) {
 	}
 	return false, err
 }
+
+// return nil on success
+// return error on fail
+func (r *Repo) PackZipFile(filename string) (err error) {
+	root, _ := r.repo.Worktree()
+	gzip := &TarGzip{}
+	gzip.Clone(root.Filesystem)
+	return
+}
