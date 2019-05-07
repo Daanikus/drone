@@ -1,13 +1,12 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"flag"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/morya/drone/util"
 	"github.com/morya/utils/log"
 )
 
@@ -16,14 +15,6 @@ var (
 	flagLogLevel = flag.String("loglevel", "info", "[debug,info,warn,error]")
 	flagListen   = flag.String("listen", ":6789", "http webhook listen address")
 )
-
-func DumpObject(obj interface{}) string {
-	var buff = &bytes.Buffer{}
-	enc := json.NewEncoder(buff)
-	enc.SetIndent("", "  ")
-	enc.Encode(obj)
-	return buff.String()
-}
 
 func main() {
 	flag.Parse()
@@ -36,7 +27,7 @@ func main() {
 		return
 	}
 
-	log.Infof("obj = %s", DumpObject(config))
+	log.Debugf("config = %s", util.DumpObject(config))
 
 	drone := newDrone()
 
