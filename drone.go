@@ -58,7 +58,7 @@ func (p *Drone) onProjectStart(c echo.Context) error {
 func (p *Drone) runTask(conn *SshConn, task *Task) {
 	var output = &bytes.Buffer{}
 	conn.Exec(output, task.Command, task.Env)
-	log.Info(output.String())
+	log.Infof("cmd=", task.Command, "\n", output.String())
 }
 
 func (p *Drone) uploadPrj(prjCfg *ProjectConfig) error {

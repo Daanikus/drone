@@ -2,7 +2,7 @@
     "servers": {
       "dev_server": {
         "ip": "39.104.53.120",
-        "user": "morya",
+        "user": "test",
         "pswd": "",
         "ssh_private_key": "~/.ssh/id_rsa",
         "ssh_port": 22
