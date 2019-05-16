@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mattn/go-colorable"
-
 	"github.com/labstack/echo"
 	glog "github.com/labstack/gommon/log"
+	colorable "github.com/mattn/go-colorable"
+
 	"github.com/morya/utils/log"
 )
 
@@ -33,7 +33,7 @@ func newDrone() *Drone {
 	d := &Drone{
 		ctx:       ctx,
 		cancel:    cancel,
-		chanEvent: make(chan *Event, 10),
+		chanEvent: make(chan *Event, 100),
 	}
 	d.wg.Add(1)
 	return d
@@ -55,7 +55,45 @@ func (p *Drone) onProjectStart(c echo.Context) error {
 	return c.String(http.StatusOK, "OK")
 }
 
+func (p *Drone) runTask(conn *SshConn, task *Task) {
+	var output = &bytes.Buffer{}
+	conn.Exec(output, task.Command, task.Env)
+	log.Info(output.String())
+}
+
+func (p *Drone) uploadPrj(prjCfg *ProjectConfig) error {
+	// TODO
+	// upload real pkg
+	return nil
+}
+
 func (p *Drone) build(evt *Event) {
+	prjCfg := evt.PrjConfig
+	serverCfg := config.Servers[prjCfg.Server]
+	sshConn, err := newSshConn(serverCfg)
+	if err != nil {
+		log.InfoErrorf(err, "[%v] connect server [%v] failed", evt.Name, serverCfg.IP)
+		return
+	}
+
+	for _, task := range prjCfg.PreTasks {
+		p.runTask(sshConn, task)
+	}
+
+	// TODO
+	// upload the real project files
+	if err := p.uploadPrj(prjCfg); err != nil {
+		log.InfoError(err)
+		return
+	}
+
+	for _, task := range prjCfg.BuildTasks {
+		p.runTask(sshConn, task)
+	}
+
+	for _, task := range prjCfg.PostTasks {
+		p.runTask(sshConn, task)
+	}
 	return
 }
 
@@ -90,18 +128,13 @@ func (p *Drone) checkRepo(name string, prj *ProjectConfig) {
 		return
 	}
 
-	serverCfg := config.Servers[prj.Server]
-	sshConn, err := newSshConn(serverCfg)
-	if err != nil {
-		log.InfoErrorf(err, "[%v] connect server [%v] failed", name, serverCfg.IP)
-		return
+	evt := &Event{
+		Name:      name,
+		PrjConfig: prj,
+		Created:   time.Now(),
 	}
 
-	for _, task := range prj.PreTasks {
-		var output = &bytes.Buffer{}
-		sshConn.Exec(output, task.Command, task.Env)
-		log.Info(output.String())
-	}
+	p.chanEvent <- evt
 }
 
 func (d *Drone) warden(ctx context.Context, cancel context.CancelFunc) {
@@ -155,5 +188,4 @@ func (p *Drone) Run(listenAddr string) {
 func (p *Drone) Stop() {
 	p.echo.Shutdown(context.Background())
 	p.wg.Wait()
-
 }
