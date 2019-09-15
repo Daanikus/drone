@@ -21,6 +21,7 @@ func loadKey(keyPath string) ssh.AuthMethod {
 		log.InfoError(err)
 		return nil
 	}
+	defer f.Close()
 	data, _ := ioutil.ReadAll(f)
 	s, _ := ssh.ParsePrivateKey(data)
 	if s == nil {
